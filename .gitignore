@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+
+# Test / tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Generated results (regenerate with: python run_contract.py)
+results_contract.json
+
+# Generated figures (regenerate with: python make_contract_figures.py)
+figures/
+
+# Secrets / credentials (never commit)
+.env
+*.pem
+*.key
+credentials
+.aws/
+
+# OS / editor
+.DS_Store
+*.swp
+.idea/
+.vscode/
