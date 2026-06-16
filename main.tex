@@ -60,7 +60,8 @@ rahulsb@bu.edu}
 Risk-Aware Causal Gating (\racg) defends tool-augmented LLM agents against
 indirect prompt injection by removing dangerous tools from the agent's visible
 action space, so that even a fully injection-compliant agent cannot call a tool
-it cannot see. We make three points. \textbf{First}, this structural guarantee
+it cannot see. We make three points, which the body develops into five
+contributions. \textbf{First}, this structural guarantee
 does not eliminate the trust assumption behind safe tool use; it \emph{relocates}
 it into the integrity of the tool \emph{contracts}---declared preconditions,
 effects, risk, and authorization---that the gate reads, so an attacker who
@@ -665,7 +666,11 @@ per target; across the eight high-risk targets the attacker's best-response spac
 is $256\times8 = 2048$ configurations, each evaluated over the three injection
 phrasings ($6144$ phrasing-trials). Because the grid is finite we enumerate it
 exhaustively---a true best response---so a ``no success'' result at a guard level
-is a guarantee over the entire modeled space, not a sampling estimate. We report
+is a guarantee over the entire modeled space, not a sampling estimate. (As an
+implementation detail, the search short-circuits as soon as it finds a
+perturbation attaining $\isr=1$; this is immaterial to the headline guarantee,
+because at $L3$ no configuration reaches $\isr=1$, so the $L3$ enumeration runs to
+completion and the ``no success at $L3$'' claim is genuinely exhaustive.) We report
 \emph{attack-induced} ISR (best ISR minus the honest baseline) so that a tool
 which is legitimately authorizable on its task is not miscounted as an attack.
 

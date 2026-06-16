@@ -10,13 +10,18 @@ necessity ladder (each necessary, the prior insufficient):
                                      contract for any tool whose signer is not in
                                      `trusted_signers`. Defeats declaration-time
                                      forgery where the attacker re-signs (A1-A3).
-  rung 2  typed auth variables    : even a correctly-signed contract may not
-                                     produce an authorization variable it is not
-                                     ENTITLED to. Strips auth variables from
-                                     `produces` unless the tool's trusted
-                                     entitlement permits them. Defeats a
-                                     signed-but-overscoped contract that rung 1
-                                     waves through.
+  rung 2  typed contract attestation : for a tool present in the trusted
+                                     attestation that claims a trusted signer,
+                                     verify its integrity-critical, gate-relevant
+                                     fields (requires, produces, risk, authorizes)
+                                     against the trusted reference and restore any
+                                     that diverge. Subsumes authorization-variable
+                                     typing (an over-claimed auth variable in
+                                     `produces` is removed because `produces` is
+                                     restored to the attested value) and also
+                                     catches same-signer tampering with requires/
+                                     risk/authorizes. Defeats a signed-but-
+                                     overscoped contract that rung 1 waves through.
   rung 3  runtime effect checking : at execution, compare a tool's realized
                                      output against its declared `produces`; an
                                      undeclared effect is dropped (and flagged).
@@ -39,7 +44,7 @@ class ContractGuard:
 
     level 0 -> no defense (passthrough; used to reproduce the vulnerability)
     level 1 -> signed provenance
-    level 2 -> + typed authorization variables
+    level 2 -> + typed contract attestation
     level 3 -> + runtime effect verification
     """
     level: int = 3

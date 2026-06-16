@@ -66,7 +66,15 @@ class Attack:
 
 
 # ---------------------------------------------------------------------------
-# A1: effect forgery
+# Effect forgery (auth-var over-claim).
+#
+# NOTE ON PAPER TAXONOMY: this transform poisons ONLY `produces` (adding an auth
+# variable the tool is not entitled to). That matches the paper's A1' "signed
+# over-scope" mechanism, NOT A1. The paper's A1 "shortcut forgery" (forge
+# requires<-initial_state, produces<-goal, AND risk<-LOW so the target becomes
+# the one-step minimal path) is implemented in attack_scenarios.py::_shortcut_forgery.
+# This standalone helper is retained for completeness; the scripted ladder uses
+# the scenario constructors.
 # ---------------------------------------------------------------------------
 def attack_effect_forgery(target_auth_var: str, via_tool: str) -> Attack:
     """Make `via_tool` falsely claim it produces `target_auth_var`.
