@@ -246,6 +246,15 @@ def main():
     print("adaptive white-box attacker (worst-case attack-induced ISR):")
     s = adaptive["summary"]
     print("  " + "".join(f"{l}={s[l]:>5.2f}  " for l in ("L0", "L1", "L2", "L3")))
+    acc = adaptive.get("accounting", {})
+    if acc:
+        print("  executed-rollout accounting:")
+        print(f"    configs full/level      = {acc['configs_full_per_level']}")
+        print(f"    phr-trials full/level   = {acc['phrasing_trials_full_per_level']}")
+        print(f"    phr-trials full L0-L3   = {acc['phrasing_trials_full_all_levels']}")
+        print(f"    configs executed/level  = {acc['configs_executed_by_level']}")
+        print(f"    configs executed total  = {acc['configs_executed_total']}")
+        print(f"    phr-trials executed     = {acc['phrasing_trials_executed']}")
     print("-" * 70)
     print("overhead / utility on honest contracts:")
     print(f"  {'level':<6}{'success':>9}{'auth':>7}{'tokens':>9}{'dropped':>9}")

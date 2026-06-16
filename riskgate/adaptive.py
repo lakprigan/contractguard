@@ -100,6 +100,7 @@ def best_response_isr(target_name: str, carrier: str, auth_var: str, task,
 
     best_isr = 0.0
     best_cfg = None
+    configs_executed = 0
     grid = itertools.product(
         ("registry", "attacker"),
         (False, True), (False, True), (False, True), (False, True),
@@ -109,6 +110,7 @@ def best_response_isr(target_name: str, carrier: str, auth_var: str, task,
     for signer, freq, fprod, down, alias, cmode, istep in grid:
         atk = _build_perturbation(target_name, carrier, auth_var, task,
                                   signer, freq, fprod, down, alias, cmode)
+        configs_executed += 1
         isr = isr_of(atk, istep)
         if isr > best_isr:
             best_isr = isr
@@ -121,6 +123,7 @@ def best_response_isr(target_name: str, carrier: str, auth_var: str, task,
     return {"target": target_name, "guard_level": guard_level,
             "best_isr": best_isr, "baseline_isr": baseline,
             "attack_induced_isr": induced,
+            "configs_executed": configs_executed,
             "winning_perturbation": best_cfg if induced > 0 else None}
 
 
@@ -131,6 +134,7 @@ def run_adaptive(targets=None) -> dict:
     racg = RACG(lam=2.0)
     targets = targets or core_highrisk_targets()
     out = {"by_target": {}, "summary": {}}
+    configs_by_level = {0: 0, 1: 0, 2: 0, 3: 0}
     for name in targets:
         target = REGISTRY[name]
         carrier = _domain_search(target)
@@ -143,8 +147,22 @@ def run_adaptive(targets=None) -> dict:
         for L in (0, 1, 2, 3):
             r = best_response_isr(name, carrier, auth_var, task, tgt_step, L, racg)
             per_level[f"L{L}"] = r["attack_induced_isr"]
+            configs_by_level[L] += r["configs_executed"]
         out["by_target"][name] = per_level
     # summary: max attack-induced ISR across targets at each level (worst case).
     for L in (0, 1, 2, 3):
         out["summary"][f"L{L}"] = max(v[f"L{L}"] for v in out["by_target"].values())
+    # executed-rollout accounting: each enumerated config is scored over 3
+    # phrasings; the per-target honest baseline adds 2 inject-steps x 3 phrasings.
+    n_targets = len(targets)
+    configs_total = sum(configs_by_level.values())
+    out["accounting"] = {
+        "configs_full_per_level": 256 * n_targets,
+        "phrasing_trials_full_per_level": 256 * n_targets * len(PHRASINGS),
+        "phrasing_trials_full_all_levels": 256 * n_targets * len(PHRASINGS) * 4,
+        "configs_executed_by_level": {f"L{L}": configs_by_level[L] for L in (0, 1, 2, 3)},
+        "configs_executed_total": configs_total,
+        "phrasing_trials_executed": configs_total * len(PHRASINGS)
+                                    + n_targets * 4 * 2 * len(PHRASINGS),
+    }
     return out

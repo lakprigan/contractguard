@@ -33,6 +33,9 @@ figures/
 credentials
 .aws/
 
+# Run logs (may contain results output)
+*.log
+
 # OS / editor
 .DS_Store
 *.swp
