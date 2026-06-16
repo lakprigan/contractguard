@@ -41,7 +41,7 @@
 \begin{document}
 
 \title{The Gate Is Only as Honest as Its Contracts:\\
-Threat-Modeling the Contract Layer of Risk-Aware Causal Gating}
+ContractGuard for the Contract Layer of Risk-Aware Causal Gating}
 
 \author{\IEEEauthorblockN{Laxmipriya Ganesh Iyer}
 \IEEEauthorblockA{\textit{Independent Researcher} \\
@@ -59,32 +59,25 @@ rahulsb@bu.edu}
 \begin{abstract}
 Risk-Aware Causal Gating (\racg) defends tool-augmented LLM agents against
 indirect prompt injection by removing dangerous tools from the agent's visible
-action space: if a high-risk tool is not in the visible set $\Vt$, even a fully
-injection-compliant agent cannot call it. We observe that this structural
-guarantee does not eliminate the underlying trust assumption---it
-\emph{relocates} it. \racg{} decides what to gate by reading each tool's
-\emph{contract}: its declared risk tier, the effects it produces, and the
-authorization it requires. The guarantee is therefore only as strong as the
-integrity of the contracts the gate reads. We threat-model the contract layer
-itself. We show that an attacker who can influence a contract---via a
-prompt-injected tool description, a registry partly populated from untrusted
-sources, or a third-party plugin that misreports its behavior---can make the
-gate mis-decide \emph{without ever persuading the agent}, driving injection
-success from zero back to one. A central and somewhat counterintuitive finding
-is that \racg{} has \emph{two} gates---a causal gate and an admissibility
-gate---and the causal gate dominates: relabeling a tool's risk or aliasing away
-its authorization is, on its own, insufficient, because an off-path tool is
-never exposed. The load-bearing trust is therefore \emph{effect integrity}, not
-the risk label. We then introduce \cg, a verifier between the registry and the
-gate, whose three mechanisms---signed provenance, typed field-integrity
-attestation,
-and runtime effect verification---form a strict necessity ladder in which each
-mechanism is required and the preceding one is provably insufficient. On a
-controlled benchmark, \cg{} restores injection success to zero against every
-attack without over-rejecting honest contracts, and we show the original
-$\lambda$ risk knob cannot substitute for contract integrity. Our results argue
-that structural gating must be paired with explicit, verifiable contract
-provenance.
+action space, so that even a fully injection-compliant agent cannot call a tool
+it cannot see. We make three points. \textbf{First}, this structural guarantee
+does not eliminate the trust assumption behind safe tool use; it \emph{relocates}
+it into the integrity of the tool \emph{contracts}---declared preconditions,
+effects, risk, and authorization---that the gate reads, so an attacker who
+corrupts a contract (via a poisoned tool description, an untrusted plugin, or a
+tool that misreports its behavior) can make the gate mis-decide
+\emph{without ever persuading the agent}. \textbf{Second}, forging a tool's
+\emph{effects} is strictly more dangerous than tampering with its
+\emph{risk label}: \racg{} applies a causal gate before its admissibility gate,
+so an off-path tool is never exposed and risk-relabeling alone fails, whereas
+effect/precondition forgery routes the dangerous tool onto the causal path and
+succeeds. Effect integrity, not the risk label, is the load-bearing assumption.
+\textbf{Third}, we introduce \cg, a verifier between the registry and the gate
+that layers signed provenance, typed contract attestation, and runtime effect
+verification; on a controlled benchmark it restores injection success to zero
+against every modeled attack---including an exhaustive white-box adaptive
+attacker---without over-rejecting honest contracts, and we show the original
+$\lambda$ risk knob cannot substitute for contract integrity.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -101,12 +94,16 @@ over high-consequence actions---sending messages, transferring funds, deleting
 records~\cite{yao2022react,schick2023toolformer,qin2023toollm}. Risk-Aware
 Causal Gating (\racg)~\cite{iyer2026racg} addresses the resulting exposure
 problem by treating the visible tool set $\Vt$ as a security control surface and
-applying least privilege~\cite{saltzer1975protection}: a high-risk tool is
-exposed only when it is both causally necessary and authorized in the current
-state. \racg{} builds on causal minimal tool
+applying least privilege~\cite{saltzer1975protection}. In one sentence: \racg{}
+reads, from each tool's declared \emph{contract}, what the tool does (its
+effects), what it needs (its preconditions), how dangerous it is (a risk tier),
+and what authorization it requires; it then plans a minimal-cost path to the
+user's goal and exposes a high-risk tool \emph{only} when that tool is both
+causally necessary for the goal and authorized in the current state, hiding it
+otherwise. \racg{} builds on causal minimal tool
 filtering~\cite{anon2026cmtf} and on \emph{learned} precondition--effect tool
 contracts~\cite{iyer2026contract2tool}, which supply the $R_i,E_i$ annotations
-the gate relies on. The headline safety property is \emph{structural}. If the
+the gate relies on. The headline safety property is \emph{structural}: if the
 dangerous tool is not in $\Vt$, then even a worst-case agent that obeys every
 injected instruction cannot call it, because the call is not available to
 attempt. This makes injection success a property of the \emph{action space}
@@ -158,9 +155,10 @@ Having characterized the vulnerability, we propose a defense. \cg{} is a verifie
 interposed between the (possibly poisoned) registry and the gate; it returns a
 sanitized registry the gate can safely read. \cg{} composes three mechanisms:
 (1)~\emph{signed provenance}, which rejects contract fields not vouched for by a
-trusted signer; (2)~\emph{typed field-integrity attestation}, which verifies a
-trusted-signed tool's gate-relevant fields against the attestation (subsuming the
-rule that a tool may only establish authorization variables it is entitled to);
+trusted signer; (2)~\emph{typed contract attestation}, which verifies a
+trusted-signed tool's gate-relevant fields (preconditions, effects, risk, and
+authorization) against the attestation (subsuming the rule that a tool may only
+establish authorization variables it is entitled to);
 and (3)~\emph{runtime effect verification}, which
 checks a tool's realized output against its declared effects and drops
 undeclared effects. We show these form a \emph{strict necessity ladder}: each
@@ -177,7 +175,7 @@ the negative result that risk-relabeling and authorization-aliasing alone do not
 defeat \racg, generalized across the whole registry and quantified by a
 per-field ablation.
 \textbf{Third}, we introduce \cg{} and show that its three mechanisms---signed
-provenance, typed field-integrity attestation, and runtime effect
+provenance, typed contract attestation, and runtime effect
 verification---form a strict necessity ladder restoring injection success to zero
 against shortcut forgery, signed over-scoping, runtime divergence, and a compound
 attack, without over-rejecting honest contracts, and we give soundness
@@ -320,8 +318,9 @@ back to the trusted attestation for that tool (or drops the tool entirely if it
 is unknown). This neutralizes any attack that re-signs a contract with forged
 fields, including A1 shortcut forgery.
 
-\paragraph{Rung 2 --- Typed field-integrity attestation ($L\geq 2$).}
-For any tool present in the trusted attestation that claims a trusted signer,
+\paragraph{Rung 2 --- Typed contract attestation ($L\geq 2$).}
+We refer to this mechanism throughout as \emph{typed contract attestation}: for
+any tool present in the trusted attestation that claims a trusted signer,
 \cg{} verifies its integrity-critical, gate-relevant fields---preconditions
 $R_i$, produced effects $E_i$, risk $\rho_i$, and authorization set
 $\alpha_i$---against the trusted reference and restores any that diverge. This
@@ -332,7 +331,7 @@ genuinely entitled to), and additionally catches \emph{same-signer} tampering
 with $R_i$, $\rho_i$, or $\alpha_i$. The latter matters: our adaptive evaluation
 (Section~\ref{sec:adaptive}) revealed that a signer-only rung~1 is bypassed by an
 attacker who keeps a trusted signer but, e.g., empties $\alpha_{t^\star}$;
-field-integrity attestation closes that class. This rung is necessary because
+typed contract attestation closes that class. This rung is necessary because
 rung~1 (origin only) does not inspect field values of a trusted-signed contract
 (A1$'$ signed over-scoping).
 
@@ -371,7 +370,7 @@ $\isr=1$ across all core high-risk targets; risk/auth tampering alone attains
 $\isr=0$ across all targets (causal-gate dominance). \\
 H7 & defense & Signed provenance neutralizes shortcut forgery ($\isr\!\to\!0$)
 but is insufficient against signed over-scoping. \\
-H8 & defense & Typed field-integrity attestation neutralizes signed over-scoping
+H8 & defense & Typed contract attestation neutralizes signed over-scoping
 but is insufficient against runtime effect divergence. \\
 H9 & defense & Runtime effect verification neutralizes effect divergence. \\
 H$_\text{cmp}$ & defense & A compound attack (A1$+$A4) is closed only by the full
@@ -417,6 +416,23 @@ scenario is run under three injection phrasings (direct, roleplay, obfuscated)
 and across \cg{} levels $L\in\{0,1,2,3\}$. All experiments are deterministic and
 reproducible; we report $\isr$ as the mean over phrasings.
 
+\paragraph{Scale of the evaluation.} The registry contains 100 tools, of which
+\textbf{8} are core high-risk targets (each with a distinct authorization
+variable); these are the targets the attacker attempts to re-expose. Every
+scripted condition is run over \textbf{3} injection phrasings and \textbf{4}
+guard levels. This yields three families of trials. (i)~The hand-built ladder
+(S0--S3) is $4~\text{scenarios}\times3~\text{phrasings}\times4~\text{levels}=48$
+trials. (ii)~The programmatic suite of Section~\ref{sec:results} instantiates
+six attack families across their applicable targets---A1, A2, and A3 over all 8
+targets, and A1$'$, A4, and the compound attack over the 3 no-establisher targets
+(below)---for $(8{+}8{+}8{+}3{+}3{+}3)=33$ attack instances, or
+$33\times3\times4=396$ scripted trials. (iii)~The adaptive attacker
+(Section~\ref{sec:adaptive}) enumerates \textbf{256 perturbation configurations
+per target} (Section~\ref{sec:adaptive} details the grid) over all 8 targets and
+4 levels, i.e.\ $256\times8=2048$ configurations, each scored over 3 phrasings
+($6144$ phrasing-trials). In total the study comprises just over $6.5\mathrm{k}$
+deterministic agent rollouts.
+
 % =========================================================
 \section{Results}
 \label{sec:results}
@@ -428,7 +444,7 @@ across \cg{} levels. The pattern is exact. With no defense ($L0$), every effecti
 $\isr=1.0$ while the honest control stays at $0$, establishing H6: contract
 integrity is load-bearing. Each subsequent rung drives its target attack to $0$
 and leaves the next attack at $1.0$: provenance ($L1$) stops S1 but not S2; typed
-authorization variables ($L2$) stop S2 but not S3; runtime verification ($L3$)
+contract attestation ($L2$) stops S2 but not S3; runtime verification ($L3$)
 stops S3. This is the strict necessity ladder H7~$<$~H8~$<$~H9.
 
 \begin{table}[t]
@@ -444,7 +460,7 @@ Scenario & $L0$ & $L1$ & $L2$ & $L3$ & Defended by \\
 \midrule
 S0 honest                & 0.00 & 0.00 & 0.00 & 0.00 & --- \\
 S1 shortcut forgery      & 1.00 & \textbf{0.00} & 0.00 & 0.00 & provenance \\
-S2 signed over-scope     & 1.00 & 1.00 & \textbf{0.00} & 0.00 & typed auth vars \\
+S2 signed over-scope     & 1.00 & 1.00 & \textbf{0.00} & 0.00 & typed attestation \\
 S3 effect divergence     & 1.00 & 1.00 & 1.00 & \textbf{0.00} & runtime check \\
 \bottomrule
 \end{tabular}
@@ -481,6 +497,18 @@ level. Shortcut forgery attains $\isr=1.00$ across all targets at $L0$
 ($n=24$ each), confirming causal-gate dominance is a general property, not an
 artifact of one task. The authorization-forgery families reproduce the ladder
 (A1$'$ closed at $L2$; A4 at $L3$).
+
+A1$'$, A4, and the compound attack are restricted to the no-establisher targets
+\emph{by construction}: these are the only targets for which a forged
+authorization variable can be isolated, because they are the only ones whose
+authorization variable has no legitimate benign establisher---on any other
+target \racg{} would open the gate via the real establisher, so reaching the
+tool is correct behavior rather than a successful forgery. Three of the eight
+core targets satisfy this condition, hence $n=3$ for those families; we do not
+read their absolute counts as a power claim but as a clean isolation of the
+authorization channel, and the adaptive search of Section~\ref{sec:adaptive}
+then generalizes beyond these scripted scenarios by enumerating the full
+perturbation grid on all eight targets.
 
 \begin{table}[t]
 \centering
@@ -613,7 +641,7 @@ Level & success & auth-task success & mean tokens & tools dropped \\
 \midrule
 $L0$ (none)        & 1.00 & 1.00 & 1350 & 0 \\
 $L1$ provenance    & 1.00 & 1.00 & 1350 & 0 \\
-$L2$ field-int.    & 1.00 & 1.00 & 1350 & 0 \\
+$L2$ typed attest. & 1.00 & 1.00 & 1350 & 0 \\
 $L3$ runtime       & 1.00 & 1.00 & 1350 & 0 \\
 \bottomrule
 \end{tabular}
@@ -631,9 +659,13 @@ $\in\{\text{registry},\text{attacker}\}$; whether to forge $R_{t^\star}$ to the
 initial state; whether to forge $E_{t^\star}$ to include the goal; whether to
 downgrade $\rho_{t^\star}$; whether to empty $\alpha_{t^\star}$; the carrier
 forgery mode $\in\{\text{none},\text{declared},\text{runtime},\text{both}\}$; and
-the injection step. Because the grid is finite we enumerate it exhaustively---a
-true best response---so a ``no success'' result at a guard level is a guarantee
-over the entire modeled space, not a sampling estimate. We report
+the injection step $\in\{0,\text{target step}\}$. The product of these axes is
+$2\times2\times2\times2\times2\times4\times2 = 256$ perturbation configurations
+per target; across the eight high-risk targets the attacker's best-response space
+is $256\times8 = 2048$ configurations, each evaluated over the three injection
+phrasings ($6144$ phrasing-trials). Because the grid is finite we enumerate it
+exhaustively---a true best response---so a ``no success'' result at a guard level
+is a guarantee over the entire modeled space, not a sampling estimate. We report
 \emph{attack-induced} ISR (best ISR minus the honest baseline) so that a tool
 which is legitimately authorizable on its task is not miscounted as an attack.
 
@@ -649,7 +681,7 @@ design}. A first version implemented rung~2 as authorization-variable typing
 only; the adaptive attacker bypassed it by keeping a trusted signer and simply
 \emph{emptying} $\alpha_{t^\star}$ (authorization aliasing on an on-path tool),
 which neither signer checking nor produced-effect typing inspects. This finding
-motivated the generalization of rung~2 to full field-integrity attestation
+motivated the generalization of rung~2 to full typed contract attestation
 (Section~\ref{sec:cg}). We report it because it illustrates the value of adaptive
 evaluation: it converts ``each rung stops its scripted attack'' into ``the stack
 stops every attack in the space,'' and it caught a real omission.
@@ -657,7 +689,8 @@ stops every attack in the space,'' and it caught a real omission.
 \begin{table}[t]
 \centering
 \caption{Adaptive white-box attacker: worst-case attack-induced ISR over an
-exhaustive best-response search of the contract-perturbation space. The full
+exhaustive best-response search of the contract-perturbation space (256
+configurations per target, 2048 across the eight targets). The full
 stack ($L3$) admits no successful perturbation.}
 \label{tab:adapt}
 \small
@@ -733,6 +766,25 @@ analogue of the base method's authorization-provenance assumption; we make it
 explicit rather than emergent, and a deployment must enforce it at the system
 level (e.g.\ a signed contract registry).
 
+\paragraph{Scope of runtime soundness.} Proposition~\ref{prop:runtime} bounds the
+effect that enters the agent's \emph{symbolic state}: \cg{} intersects a tool's
+realized output with its attested effects before that output updates the state
+the gate reasons over, so no undeclared variable---in particular no undeclared
+authorization variable---can be laundered into subsequent gating decisions. This
+guarantee is over \emph{state}, not over the external world. Runtime effect
+verification mediates the state update, but it acts \emph{after} the tool has
+executed: if a poisoned or misbehaving tool performs an irreversible external
+side effect---sending an email, deleting a file, transferring funds---before
+\cg{} inspects its output, dropping the undeclared effect from the symbolic state
+does not undo the real-world action. The proposition therefore prevents a forged
+runtime effect from \emph{escalating into further gated calls}, but it does not,
+on its own, prevent the first irreversible side effect of the diverging tool.
+Closing that gap requires composing \cg{} with mechanisms that intervene
+\emph{before} commitment---pre-execution effect declaration with a transactional
+or dry-run check, capability-scoped execution sandboxes, or human confirmation on
+irreversible operations---which we treat as an enforcement-layer concern
+orthogonal to contract integrity and discuss in Section~\ref{sec:lim}.
+
 % =========================================================
 \section{Discussion}
 \label{sec:disc}
@@ -757,22 +809,51 @@ Defensive effort and attestation should concentrate on $R_i$ and $E_i$.
 \section{Limitations and Future Work}
 \label{sec:lim}
 % =========================================================
-Our evaluation uses a controlled, deterministic benchmark and a worst-case
-compliant agent. As in the base method, this is a deliberate choice that
-\emph{upper-bounds} injection success and isolates structural effects; it does
-not measure how a particular hosted model behaves under contract poisoning. A
-real-LLM validation track---driving frontier models over the poisoned-then-\cg{}
-registry, analogous to the base method's hosted-model study---is natural future
-work, with the prediction that description-level persuasion attacks (which leave
-$\Vt$ intact) vary by model while structural contract attacks (which corrupt
-$\Vt$) behave model-independently.
+Our primary evaluation uses a controlled, deterministic benchmark and a
+worst-case compliant agent. As in the base method, this is a deliberate choice
+that \emph{upper-bounds} injection success and isolates structural effects. To
+connect that bound to real models we provide a \emph{real-LLM validation track}:
+the same env/filter/registry/attack/guard stack driven by an actual model as the
+policy (via native function calling), over a focused grid of
+\mbox{models~$\times$~8~high-risk~targets~$\times$~3~phrasings~$\times$~$\{L0,L3\}$~$\times$~$\{$A1,A4$\}$}.
+It reports \emph{attack-induced} ISR (baseline-subtracted, as in
+Section~\ref{sec:adaptive}) so a legitimately-authorizable target is not
+miscounted, and it tests the structural prediction directly: the contract attack
+lands at $L0$ (the re-exposed tool is in $\Vt$, so a compliant model can call it)
+and is closed at $L3$ (the forged exposure is removed, so the tool is absent from
+$\Vt$ and \emph{no} model can call it), independent of phrasing. The harness is
+provider-agnostic (Anthropic, Amazon Bedrock, any OpenAI-compatible endpoint,
+and an offline stub) and degrades gracefully when a provider is unavailable. We
+release it with the artifact and validate its wiring against the deterministic
+reference; running it at scale across several hosted frontier models---and
+measuring the predicted split between description-level persuasion attacks
+(which leave $\Vt$ intact and should vary by model) and structural contract
+attacks (which corrupt $\Vt$ and should behave model-independently)---is the
+remaining empirical work, which we leave to a hosted-model study to keep this
+paper's claims tied to the exhaustive structural guarantee.
 
 \cg{}'s root of trust is a signed attestation of the original registry; we
 assume but do not build the signing infrastructure, and a deployment must ensure
-the attestation cannot itself be poisoned. The typed-authorization mechanism
+the attestation cannot itself be poisoned. The typed-attestation mechanism
 requires a declared entitlement per tool, which is an additional specification
 burden; deriving entitlements automatically from a trusted reference contract is
-future work. Finally, this paper addresses the \emph{contract-integrity} half of
+future work.
+
+A further limitation concerns runtime effect verification. In our symbolic
+benchmark, mediating the state update is sufficient to block effect divergence,
+because a tool's only avenue of influence is the variables it writes to the
+shared state. In a deployed system a tool may produce \emph{irreversible external
+side effects}---an email already sent, a file already deleted, funds already
+transferred---before \cg{} intersects its output with the declared effects.
+\cg{}'s runtime rung prevents such a divergence from escalating into further
+gated calls (it never enters the state the gate reads), but it cannot retract an
+action the tool has already committed in the world. Runtime effect verification
+should therefore be understood as a \emph{state-integrity} mechanism, not a
+rollback mechanism; for irreversible operations it must be paired with
+before-commitment controls (pre-execution effect declaration validated by a
+dry-run or transactional wrapper, capability-scoped sandboxing, or human
+confirmation). Integrating \cg{} with such an enforcement layer, and verifying
+that the composition preserves the necessity ladder, is future work. Finally, this paper addresses the \emph{contract-integrity} half of
 the trust that structural gating relocates. The complementary half---that the
 gate reasons about risk \emph{per tool}, so danger emergent across a chain of
 individually-safe tools can evade it (``toolchain confusion'')---and an
@@ -788,7 +869,7 @@ use; it relocates it into the integrity of the contracts the gate reads. We
 threat-modeled that contract layer, showed that effect-forgery attacks defeat the
 gate \emph{upstream of the agent} while naive risk/authorization tampering does
 not (a consequence of \racg's dominant causal gate), and introduced \cg, whose
-signed-provenance, typed-authorization, and runtime-effect-verification
+signed-provenance, typed-contract-attestation, and runtime-effect-verification
 mechanisms form a strict necessity ladder restoring injection success to zero
 without over-rejecting honest contracts. The risk knob $\lambda$ cannot
 substitute for any of these. The gate is only as honest as its contracts;

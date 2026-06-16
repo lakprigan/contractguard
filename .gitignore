@@ -17,6 +17,12 @@ env/
 # Generated results (regenerate with: python run_contract.py)
 results_contract.json
 
+# Generated results (regenerate with: python run_llm.py --models ...)
+results_llm.json
+
+# Build output (regenerate with: tectonic main.tex)
+main.pdf
+
 # Generated figures (regenerate with: python make_contract_figures.py)
 figures/
 

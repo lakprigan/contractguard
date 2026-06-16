@@ -107,7 +107,7 @@ def fig_distributional(results):
     x = np.arange(len(fams)); w = 0.2
     fig, ax = plt.subplots(figsize=(7.2, 3.4))
     colors = ["#b03a2e", "#d68910", "#7d6608", "#1e8449"]
-    rung = ["L0 (none)", "L1 provenance", "L2 field-integrity", "L3 runtime"]
+    rung = ["L0 (none)", "L1 provenance", "L2 typed attest.", "L3 runtime"]
     for j, l in enumerate(levels):
         ax.bar(x + (j - 1.5) * w, data[:, j], w, label=rung[j], color=colors[j])
     pretty = {"A1": "A1\nshortcut", "A1p": "A1'\nover-scope", "A4": "A4\ndivergence",
@@ -132,7 +132,7 @@ def fig_adaptive(results):
     fig, ax = plt.subplots(figsize=(7.2, 3.6))
     im = ax.imshow(data, aspect="auto", cmap="Reds", vmin=0, vmax=1)
     ax.set_xticks(range(len(levels)))
-    ax.set_xticklabels(["L0\nnone", "L1\nprovenance", "L2\nfield-int.", "L3\nruntime"])
+    ax.set_xticklabels(["L0\nnone", "L1\nprovenance", "L2\ntyped attest.", "L3\nruntime"])
     ax.set_yticks(range(len(targets)))
     ax.set_yticklabels(targets, fontsize=8)
     for i in range(len(targets)):

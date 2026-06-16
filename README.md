@@ -5,7 +5,7 @@ Causal Gating (RACG)*. This is **Paper 1** of a two-paper program:
 
 > **The Gate Is Only as Honest as Its Contracts** — threat-modeling the contract
 > layer of RACG, and defending it with **ContractGuard** (signed provenance,
-> typed authorization variables, runtime effect verification).
+> typed contract attestation, runtime effect verification).
 
 Arc B (toolchain confusion + FlowGate) is seeded as future work in the paper.
 
@@ -32,19 +32,24 @@ figures/
   ladder_isr.png         # strict necessity ladder (H6-H9)
   lambda_negative.png    # risk-knob negative result (H14a)
 run_contract.py          # entry point -> prints tables, writes results_contract.json
+run_llm.py               # real-LLM validation track -> writes results_llm.json
 requirements.txt
 riskgate/
   model.py               # tool contracts + provenance fields + auth-variable type
   registry.py            # 100-tool registry (with entitlements)
   filters.py             # RACG and baselines
-  env.py                 # agent loop; applies attack + ContractGuard
+  env.py                 # agent loop; MockAgent + LLMAgent; applies attack + ContractGuard
   attacks.py             # A1 forgery, A2 risk-downgrade, A3 auth-alias, A4 divergence
-  contractguard.py       # 3-rung verifier (provenance / typed-auth / runtime)
+  contractguard.py       # 3-rung verifier (provenance / typed attestation / runtime)
   attack_scenarios.py    # S0-S3 scenarios isolating each rung
   runner_contract.py     # aggregates ISR, validates H6-H9 + H14a
-  tasks.py, llm.py, runner.py  # carried over from the base benchmark
+  llm.py                 # provider abstraction (Anthropic / Bedrock / OpenAI-compat / stub)
+  llm_runner.py          # validation grid: models x targets x phrasings x {L0,L3} x {A1,A4}
+  tasks.py, runner.py    # carried over from the base benchmark
 tests/
-  test_contract_integrity.py   # 11 structural tests for attacks + rungs
+  test_contract_integrity.py   # structural tests for attacks + rungs
+  test_contract_strength.py    # distributional / adaptive / overhead / field
+  test_llm_validation.py       # offline (stub) tests for the validation track
 ```
 
 ## Reproduce
@@ -58,6 +63,36 @@ python run_contract.py            # prints the ladder + H6-H9/H14a PASS/FAIL, wr
 python -m pytest -q tests         # structural unit tests
 python make_contract_figures.py   # regenerate figures/ from results_contract.json
 ```
+
+## Real-LLM validation track
+
+The deterministic track above uses a worst-case adversarially-compliant
+`MockAgent` and *upper-bounds* injection success. The validation track drives
+*real* models through the identical env/filter/registry/attack/guard stack to
+confirm the structural prediction on real agents: a contract attack re-exposes a
+high-risk tool (attack-induced ISR > 0 at L0), and ContractGuard L3 removes that
+exposure so the tool leaves V_t and **no** model can call it (attack-induced
+ISR = 0 at L3), independent of injection phrasing.
+
+Grid (a strict subset of the scripted suite): **models × 8 high-risk targets ×
+3 phrasings × {L0, L3} × {A1, A4}**. ISR is *attack-induced* (baseline-subtracted,
+matching the adaptive search), so a legitimately-authorizable target such as
+`transfer_funds` is not miscounted as an attack.
+
+```bash
+# offline smoke test (no keys/network): a stub model emulating a susceptible agent
+python run_llm.py --models stub
+
+# real models (set provider creds first; any subset works)
+python run_llm.py --models \
+  bedrock:anthropic.claude-3-5-sonnet-20240620-v1:0,\
+anthropic:claude-3-5-haiku-latest,\
+openai_compat:gpt-4o-mini
+```
+
+Providers that cannot be constructed (missing SDK/key) are recorded as
+*skipped*, never crashing the sweep; the deterministic `MockAgent` reference is
+always printed beside the model columns. Results are written to `results_llm.json`.
 
 ## Build the paper
 
@@ -74,7 +109,7 @@ pdflatex main.tex && pdflatex main.tex
 |----------|----|----|----|----|-------------|
 | honest             | 0.00 | 0.00 | 0.00 | 0.00 | — |
 | shortcut forgery   | 1.00 | **0.00** | 0.00 | 0.00 | provenance (rung 1) |
-| signed over-scope  | 1.00 | 1.00 | **0.00** | 0.00 | field-integrity (rung 2) |
+| signed over-scope  | 1.00 | 1.00 | **0.00** | 0.00 | typed attestation (rung 2) |
 | effect divergence  | 1.00 | 1.00 | 1.00 | **0.00** | runtime check (rung 3) |
 
 **Strengthened claims (10 hypotheses total):**
@@ -97,13 +132,15 @@ pdflatex main.tex && pdflatex main.tex
 ```
 riskgate/
   attacks.py            # A1/A2/A3/A4 poisoned-contract transforms
-  contractguard.py      # 3-rung verifier (provenance / field-integrity / runtime)
+  contractguard.py      # 3-rung verifier (provenance / typed attestation / runtime)
   attack_scenarios.py   # hand-built S0-S3 (core ladder)
   attack_suite.py       # programmatic suite across all high-risk targets (#1,#4)
   adaptive.py           # exhaustive white-box adaptive attacker (#2)
   analysis_contract.py  # overhead/utility (#5) + field ablation (#8)
   runner_contract.py    # aggregates + validates all 10 hypotheses
+  llm.py, llm_runner.py # real-LLM validation track (Sec. 7.1)
 tests/
   test_contract_integrity.py   # core ladder + negatives
   test_contract_strength.py    # distributional / adaptive / overhead / field
+  test_llm_validation.py       # offline (stub) validation-track tests
 ```
