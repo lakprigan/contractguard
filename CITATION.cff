@@ -1,0 +1,39 @@
+cff-version: 1.2.0
+message: "If you use this repository or build on the paper, please cite it as below."
+title: "The Gate Is Only as Honest as Its Contracts: ContractGuard for the Contract Layer of Risk-Aware Causal Gating"
+authors:
+  - family-names: "Iyer"
+    given-names: "Laxmipriya Ganesh"
+  - family-names: "Suresh Babu"
+    given-names: "Rahul"
+year: 2026
+identifiers:
+  - type: other
+    value: "arXiv:2606.18550"
+    description: "arXiv preprint identifier"
+url: "https://arxiv.org/abs/2606.18550"
+repository-code: "https://github.com/lakprigan/contractguard"
+license: MIT
+keywords:
+  - LLM agents
+  - AI safety
+  - agent safety
+  - prompt injection
+  - tool contracts
+  - contract integrity
+  - provenance
+  - attestation
+  - runtime verification
+  - least privilege
+  - risk-aware causal gating
+  - trustworthy AI
+preferred-citation:
+  type: article
+  title: "The Gate Is Only as Honest as Its Contracts: ContractGuard for the Contract Layer of Risk-Aware Causal Gating"
+  authors:
+    - family-names: "Iyer"
+      given-names: "Laxmipriya Ganesh"
+    - family-names: "Suresh Babu"
+      given-names: "Rahul"
+  year: 2026
+  notes: "arXiv:2606.18550"
