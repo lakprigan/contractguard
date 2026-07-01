@@ -1,13 +1,53 @@
-# ContractGuard (Arc A)
+# The Gate Is Only as Honest as Its Contracts: ContractGuard for the Contract Layer of Risk-Aware Causal Gating
 
-Companion artifact to *Capability Minimization as a Safety Primitive: Risk-Aware
-Causal Gating (RACG)*. This is **Paper 1** of a two-paper program:
+**Authors:** Laxmipriya Ganesh Iyer, **Rahul Suresh Babu**
+
+Reproducibility artifacts and experimental code for the paper above (ContractGuard, Arc A).
+
+- **Paper title:** *The Gate Is Only as Honest as Its Contracts: ContractGuard for the Contract Layer of Risk-Aware Causal Gating*
+- **Authors:** Laxmipriya Ganesh Iyer, Rahul Suresh Babu
+- **arXiv:** https://arxiv.org/abs/2606.18550 (arXiv:2606.18550 [cs.CR])
+- **Companion paper (RACG):** *Capability Minimization as a Safety Primitive: Risk-Aware Causal Gating for Least-Privilege LLM Agents* — arXiv: https://arxiv.org/abs/2606.13884 (arXiv:2606.13884 [cs.AI])
+
+This is **Paper 1** of a two-paper program:
 
 > **The Gate Is Only as Honest as Its Contracts** — threat-modeling the contract
 > layer of RACG, and defending it with **ContractGuard** (signed provenance,
 > typed contract attestation, runtime effect verification).
 
 Arc B (toolchain confusion + FlowGate) is seeded as future work in the paper.
+
+## Citation
+
+If you use this repository or build on the paper, please cite both ContractGuard and its companion RACG paper.
+
+**ContractGuard (this work):**
+
+```bibtex
+@misc{iyer2026contractguard,
+  title         = {The Gate Is Only as Honest as Its Contracts: ContractGuard for the Contract Layer of Risk-Aware Causal Gating},
+  author        = {Iyer, Laxmipriya Ganesh and Suresh Babu, Rahul},
+  year          = {2026},
+  eprint        = {2606.18550},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CR},
+  url           = {https://arxiv.org/abs/2606.18550}
+}
+```
+
+**Companion paper (RACG):**
+
+```bibtex
+@misc{iyer2026racg,
+  title         = {Capability Minimization as a Safety Primitive: Risk-Aware Causal Gating for Least-Privilege LLM Agents},
+  author        = {Iyer, Laxmipriya Ganesh and Suresh Babu, Rahul},
+  year          = {2026},
+  eprint        = {2606.13884},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.AI},
+  url           = {https://arxiv.org/abs/2606.13884}
+}
+```
 
 ## Thesis
 
